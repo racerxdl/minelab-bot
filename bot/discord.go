@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/bwmarrin/discordgo"
 	"github.com/racerxdl/minelab-bot/discord"
+	"github.com/sandertv/gophertunnel/minecraft/text"
 	"time"
 )
 
@@ -25,7 +26,7 @@ func (lab *Minelab) handleOnDiscordMessage(s *discordgo.Session, m *discordgo.Me
 	}
 
 	if m.ChannelID == lab.discord.chatChannelId {
-		lab.BroadcastMessage("Discord", name+": "+m.Content)
+		lab.BroadcastMessage("Discord","<" + text.Colourf("<yellow>%s</yellow>", name) + "> " + text.Colourf("<yellow>%s</yellow>",m.Content))
 		return
 	}
 
@@ -192,11 +193,6 @@ func (lab *Minelab) discordRoutine(stop chan struct{}) {
 		lab.dg = nil
 		_ = dg.Close()
 	}()
-
-	//roles, _ := dg.GuildRoles(p.cfg.Bot.GuildID)
-	//for _, r := range roles {
-	//	p.log.Infof("Role %q => %s\n", r.Name, r.ID)
-	//}
 
 	chatId, err := discord.GetChatID(dg, lab.cfg.Bot.GuildID, lab.cfg.Bot.ChatCategory, lab.cfg.Bot.ChatChannel)
 	if err != nil {

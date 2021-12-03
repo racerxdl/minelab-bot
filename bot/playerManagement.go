@@ -28,8 +28,11 @@ func (lab *Minelab) handlePlayerUpdate(event hockevent.PlayerUpdateEvent) {
 	})
 }
 func (lab *Minelab) handlePlayerList(event hockevent.PlayerListEvent) {
+	lab.log.Infof("Received player list with %d players", len(event.Players))
 	for _, player := range event.Players {
+		lab.log.Infof("PlayerList(%s)", player)
 		lab.AddPlayer(player, "")
+		lab.playerSetPlaying(player)
 	}
 }
 
@@ -56,6 +59,10 @@ func (lab *Minelab) GetPlayerLastDeathPosition(username string) (mgl32.Vec3, boo
 	lab.playerLock.RLock()
 	defer lab.playerLock.RUnlock()
 
+	if username[0] == '@' {
+		username = username[1:]
+	}
+
 	player, ok := lab.players[username]
 	if !ok || player.LastDeathPosition == nil {
 		return mgl32.Vec3{}, false
@@ -64,32 +71,42 @@ func (lab *Minelab) GetPlayerLastDeathPosition(username string) (mgl32.Vec3, boo
 	return *player.LastDeathPosition, true
 }
 
-func (lab *Minelab) GetPlayerPosition(username string) mgl32.Vec3 {
+func (lab *Minelab) GetPlayerPosition(username string) *mgl32.Vec3 {
 	lab.playerLock.RLock()
 	defer lab.playerLock.RUnlock()
 
-	player, ok := lab.players[username]
-	if !ok {
-		lab.log.Warnf("player %s not found\n", username)
-		return mgl32.Vec3{}
+	if username[0] == '@' {
+		username = username[1:]
 	}
 
-	return player.Position
+	player, ok := lab.players[username]
+	if !ok {
+		return nil
+	}
+
+	p := player.Position
+
+	return &p
 }
 
 func (lab *Minelab) UpdatePlayerPosAbsolute(username string, pos mgl32.Vec3) {
 	lab.playerLock.Lock()
 	defer lab.playerLock.Unlock()
 
-	player, ok := lab.players[username]
-	if !ok {
-		lab.log.Warnf("player %s not found\n", username)
-		return // No player to update
+	if username[0] == '@' {
+		username = username[1:]
 	}
 
-	if !pos.ApproxEqual(player.Position) {
-		lab.log.Debugf("%s at %v\n", username, player.Position)
+	player, ok := lab.players[username]
+	if !ok {
+		lab.players[username] = &models.Player{
+			Username: username,
+			Position: pos,
+		}
+		go lab.playerSetPlaying(username) // Spawn in routine because this also locks the mutex
+		return
 	}
+
 	player.Position = pos
 }
 
@@ -97,9 +114,12 @@ func (lab *Minelab) UpdatePlayerDeath(username string) {
 	lab.playerLock.Lock()
 	defer lab.playerLock.Unlock()
 
+	if username[0] == '@' {
+		username = username[1:]
+	}
+
 	player, ok := lab.players[username]
 	if !ok {
-		lab.log.Warnf("player %s not found\n", username)
 		return
 	}
 

@@ -74,7 +74,10 @@ func (lab *Minelab) Start() error {
 	go lab.discordRoutine(stop)
 	go lab.rxLoop(stop)
 
-	lab.RequestPlayerList()
+	go func() {
+		time.Sleep(time.Second * 10)
+		lab.RequestPlayerList()
+	}()
 
 	<-lab.globalstop
 	lab.log.Info("Received global stop\n")
@@ -136,5 +139,7 @@ func (lab *Minelab) HandlePacket(event hockevent.HockEvent) {
 		lab.handlePlayerDeath(*event.(*hockevent.PlayerDeathEvent))
 	case hockevent.EVENT_PLAYER_UPDATE:
 		lab.handlePlayerUpdate(*event.(*hockevent.PlayerUpdateEvent))
+	case hockevent.EVENT_PLAYER_LIST:
+		lab.handlePlayerList(*event.(*hockevent.PlayerListEvent))
 	}
 }

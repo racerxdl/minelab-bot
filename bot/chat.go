@@ -2,7 +2,6 @@ package bot
 
 import (
 	"fmt"
-	"github.com/go-gl/mathgl/mgl32"
 	"github.com/racerxdl/minelab-bot/hockevent"
 	"github.com/racerxdl/minelab-bot/lang"
 	"github.com/sandertv/gophertunnel/minecraft"
@@ -70,7 +69,7 @@ func (lab *Minelab) handleChat(event hockevent.MessageEvent) bool {
 	msg := text.ANSI(event.Message)
 	lab.log.Infof("%s> %s\n", event.From, msg)
 
-	if strings.HasPrefix(msg, "!") {
+	if strings.HasPrefix(msg, "!") || strings.HasPrefix(msg, "?") {
 		// COMMAND
 		lab.handleCommand(event.From, msg)
 		return true
@@ -84,36 +83,38 @@ func (lab *Minelab) handleCommand(playerName, message string) {
 	message = message[1:]
 	cmd := strings.SplitN(message, " ", 2)
 	if len(cmd) < 1 {
-		lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Please specify the command</red>"))
+		lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Especifique o comando</red>"))
 		return
 	}
 
 	switch cmd[0] {
+	case "commands", "comandos":
+		lab.SendMessageToPlayer(ServerName, playerName, "ondemorri, ondeta")
 	case "ondemorri", "wheredididie":
 		coord, hasDied := lab.GetPlayerLastDeathPosition(playerName)
 		if !hasDied {
-			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>You haven't died yet</red>"))
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Você ainda não morreu</red>"))
 		} else {
-			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("You died at X: %.0f Y: %.0f Z: %.0f", coord.X(), coord.Y(), coord.Z()))
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("Você morreu em X: %.0f Y: %.0f Z: %.0f", coord.X(), coord.Y(), coord.Z()))
 			lab.sendDiscordChat(ServerName, fmt.Sprintf("%s died at X: %.0f Y: %.0f Z: %.0f", playerName, coord.X(), coord.Y(), coord.Z()))
 		}
 	case "whereis", "ondeta":
 		if len(cmd) < 2 {
-			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Usage: !whereis playerName</red>"))
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Uso: !ondeta playerName</red>"))
 			return
 		}
 		pos := lab.GetPlayerPosition(cmd[1])
-		if pos.ApproxEqual(mgl32.Vec3{}) {
-			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>I did not found %q</red>", cmd[1]))
+		if pos == nil {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Não achei %q</red>", cmd[1]))
 		} else {
-			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("Player %q is at X: %.0f Y: %.0f Z: %.0f", cmd[1], pos.X(), pos.Y(), pos.Z()))
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("Jogador %q está em X: %.0f Y: %.0f Z: %.0f", cmd[1], pos.X(), pos.Y(), pos.Z()))
 			lab.sendDiscordChat(ServerName, fmt.Sprintf("Player %q is at X: %.0f Y: %.0f Z: %.0f", cmd[1], pos.X(), pos.Y(), pos.Z()))
 		}
 	case "reload":
 		//lab.reloadConfig()
 		//lab.reloadSound()
-		lab.BroadcastMessage(ServerName, "Configurations reloaded!")
+		lab.BroadcastMessage(ServerName, "Configuracões recarregadas")
 	default:
-		lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Invalid command %q</red>", cmd[0]))
+		lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Comando inválido %q</red>", cmd[0]))
 	}
 }
