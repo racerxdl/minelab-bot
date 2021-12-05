@@ -26,7 +26,7 @@ func (lab *Minelab) handleOnDiscordMessage(s *discordgo.Session, m *discordgo.Me
 	}
 
 	if m.ChannelID == lab.discord.chatChannelId {
-		lab.BroadcastMessage("Discord","<" + text.Colourf("<yellow>%s</yellow>", name) + "> " + text.Colourf("<yellow>%s</yellow>",m.Content))
+		lab.BroadcastMessage("Discord", "<"+text.Colourf("<yellow>%s</yellow>", name)+"> "+text.Colourf("<yellow>%s</yellow>", m.Content))
 		return
 	}
 

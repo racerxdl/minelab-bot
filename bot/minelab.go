@@ -3,6 +3,7 @@ package bot
 import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/racerxdl/minelab-bot/config"
+	"github.com/racerxdl/minelab-bot/database"
 	"github.com/racerxdl/minelab-bot/hockevent"
 	"github.com/racerxdl/minelab-bot/models"
 	"github.com/sandertv/gophertunnel/minecraft/text"
@@ -20,6 +21,7 @@ type Minelab struct {
 	cfg            config.Config
 	chatBroadcast  chan packet.Packet
 	lastupdatetick uint64
+	db             database.DB
 
 	playerLock         sync.RWMutex
 	broadcastLock      sync.Mutex
@@ -40,14 +42,19 @@ type Minelab struct {
 	sender chan hockevent.HockEvent
 }
 
-func MakeMinelab(cfg config.Config) *Minelab {
+func MakeMinelab(cfg config.Config) (*Minelab, error) {
+	db, err := database.MakeDB("minelab.db")
+	if err != nil {
+		return nil, err
+	}
 	return &Minelab{
 		log:                logrus.New(),
 		players:            make(map[string]*models.Player),
 		cfg:                cfg,
 		broadcastReceivers: make(map[chan<- packet.Packet]struct{}),
 		chatBroadcast:      make(chan packet.Packet, 1),
-	}
+		db:                 db,
+	}, nil
 }
 
 func (lab *Minelab) Start() error {
@@ -89,7 +96,7 @@ func (lab *Minelab) Start() error {
 	close(stop)
 
 	close(lab.sender)
-
+	_ = lab.db.Close()
 	return nil
 }
 

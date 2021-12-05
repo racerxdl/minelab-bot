@@ -89,7 +89,20 @@ func (lab *Minelab) handleCommand(playerName, message string) {
 
 	switch cmd[0] {
 	case "commands", "comandos":
-		lab.SendMessageToPlayer(ServerName, playerName, "ondemorri, ondeta")
+		lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<bold>ondemorri</bold>, <bold>ondeta</bold>, <bold>mark</bold>"))
+	case "mark":
+		if len(cmd) < 2 {
+			lab.SendMessageToPlayer(ServerName, playerName, "<bold>mark</bold> nome_da_marcacao")
+			return
+		}
+		pos := lab.GetPlayerPosition(playerName)
+		err := lab.db.AddPositionMark(playerName, cmd[1], *pos)
+		if err != nil {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<bold>Houve um erro salvando o marcador!</bold>"))
+			lab.sendDiscordChat(ServerName, fmt.Sprintf("%s tried to save marker %q but got error %q", playerName, cmd[1], err))
+		} else {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<bold>Marcador %q foi salvo em X: %.0f Y: %.0f Z: %.0f! Use !ondeta %q para ler novamente</bold>", cmd[1], pos.X(), pos.Y(), pos.Z(), cmd[1]))
+		}
 	case "ondemorri", "wheredididie":
 		coord, hasDied := lab.GetPlayerLastDeathPosition(playerName)
 		if !hasDied {
@@ -100,16 +113,25 @@ func (lab *Minelab) handleCommand(playerName, message string) {
 		}
 	case "whereis", "ondeta":
 		if len(cmd) < 2 {
-			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Uso: !ondeta playerName</red>"))
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Uso: !ondeta playerName/marcador</red>"))
 			return
 		}
 		pos := lab.GetPlayerPosition(cmd[1])
-		if pos == nil {
-			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Não achei %q</red>", cmd[1]))
-		} else {
-			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("Jogador %q está em X: %.0f Y: %.0f Z: %.0f", cmd[1], pos.X(), pos.Y(), pos.Z()))
+		if pos != nil {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("Jogador <bold>%s</bold> está em X: %.0f Y: %.0f Z: %.0f", cmd[1], pos.X(), pos.Y(), pos.Z()))
 			lab.sendDiscordChat(ServerName, fmt.Sprintf("Player %q is at X: %.0f Y: %.0f Z: %.0f", cmd[1], pos.X(), pos.Y(), pos.Z()))
+			return
 		}
+
+		mark, err := lab.db.GetPositionMark(playerName, cmd[1])
+		if err != nil {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Não achei um jogador/marcador %q</red>", cmd[1]))
+			lab.sendDiscordChat(ServerName, fmt.Sprintf("%s tried to read marker %q but got error %q", playerName, cmd[1], err))
+			return
+		}
+		lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("Marcador <bold>%s</bold> está em X: %.0f Y: %.0f Z: %.0f", cmd[1], mark.X(), mark.Y(), mark.Z()))
+		lab.sendDiscordChat(ServerName, fmt.Sprintf("Mark %q is at X: %.0f Y: %.0f Z: %.0f", cmd[1], mark.X(), mark.Y(), mark.Z()))
+		return
 	case "reload":
 		//lab.reloadConfig()
 		//lab.reloadSound()

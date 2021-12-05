@@ -15,7 +15,10 @@ func main() {
 		log.Fatalf("error loading config: %s\n", err)
 	}
 
-	lab := bot.MakeMinelab(cfg)
+	lab, err := bot.MakeMinelab(cfg)
+	if err != nil {
+		log.Fatalf("error starting bot: %s", err)
+	}
 	c := make(chan os.Signal)
 	go func() {
 		<-c

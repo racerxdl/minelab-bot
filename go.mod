@@ -19,6 +19,7 @@ require (
 	github.com/klauspost/compress v1.11.1 // indirect
 	github.com/muhammadmuzzammil1998/jsonc v0.0.0-20200627155943-e1c384b63054 // indirect
 	github.com/sandertv/go-raknet v1.10.2 // indirect
+	go.etcd.io/bbolt v1.3.6 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	golang.org/x/image v0.0.0-20190802002840-cff245a6509b // indirect
 	golang.org/x/net v0.0.0-20210226172049-e18ecbb05110 // indirect
