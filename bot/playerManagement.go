@@ -43,7 +43,7 @@ func (lab *Minelab) handlePlayerDimensionChanged(event hockevent.PlayerDimension
 	lab.log.Debugf("Received DimensionChangeEvent(%s,%d) -> %t", event.Username, event.Dimension, changed)
 	if changed {
 		lab.log.Infof("Player %s went to %s", event.Username, event.DimensionName())
-		lab.BroadcastMessage(ServerName, text.Colourf("<b>%s<b> foi para <b>%s</b>", event.Username, event.DimensionName()))
+		lab.BroadcastMessage(ServerName, text.Colourf("<b><yellow>%s</yellow></b> foi para <b>%s</b>", event.Username, event.DimensionName()))
 		lab.sendDiscordChat(ServerName, fmt.Sprintf("%s foi para %s", event.Username, event.DimensionName()))
 	}
 }
