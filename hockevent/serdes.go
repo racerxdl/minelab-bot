@@ -24,19 +24,25 @@ func Deserialize(data []byte) (HockEvent, error) {
 
 	var event HockEvent
 
+	log.Debugf("received event %d", h.Type)
+
 	switch h.Type {
-	case EVENT_MESSAGE:
+	case EventMessage:
 		event = &MessageEvent{}
-	case EVENT_PLAYER_JOIN:
+	case EventPlayerJoin:
 		event = &PlayerJoinEvent{}
-	case EVENT_PLAYER_LEFT:
+	case EventPlayerLeft:
 		event = &PlayerLeftEvent{}
-	case EVENT_PLAYER_DEATH:
+	case EventPlayerDeath:
 		event = &PlayerDeathEvent{}
-	case EVENT_PLAYER_UPDATE:
+	case EventPlayerUpdate:
 		event = &PlayerUpdateEvent{}
-	case EVENT_PLAYER_LIST:
+	case EventPlayerList:
 		event = &PlayerListEvent{}
+	case EventPlayerDimensionChange:
+		event = &PlayerDimensionChangeEvent{}
+	case EventLog:
+		event = &LogEvent{}
 	default:
 		return nil, fmt.Errorf("invalid type %d", h.Type)
 	}

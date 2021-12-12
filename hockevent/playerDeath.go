@@ -5,5 +5,5 @@ type PlayerDeathEvent struct {
 }
 
 func (PlayerDeathEvent) GetType() Type {
-	return EVENT_PLAYER_DEATH
+	return EventPlayerDeath
 }

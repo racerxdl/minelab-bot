@@ -12,5 +12,5 @@ type PlayerUpdateEvent struct {
 }
 
 func (PlayerUpdateEvent) GetType() Type {
-	return EVENT_PLAYER_UPDATE
+	return EventPlayerUpdate
 }

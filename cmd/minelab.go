@@ -10,6 +10,7 @@ import (
 var log = logrus.New()
 
 func main() {
+	logrus.SetLevel(logrus.DebugLevel)
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Fatalf("error loading config: %s\n", err)

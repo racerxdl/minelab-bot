@@ -134,19 +134,27 @@ func (lab *Minelab) routine(stop chan struct{}) {
 	}
 }
 
+func (lab *Minelab) handleLog(event hockevent.LogEvent) {
+	lab.log.Infof("[BDS] %s", event.Message)
+}
+
 func (lab *Minelab) HandlePacket(event hockevent.HockEvent) {
 	switch event.GetType() {
-	case hockevent.EVENT_MESSAGE:
+	case hockevent.EventMessage:
 		lab.handleChat(*event.(*hockevent.MessageEvent))
-	case hockevent.EVENT_PLAYER_JOIN:
+	case hockevent.EventPlayerJoin:
 		lab.handlePlayerJoin(*event.(*hockevent.PlayerJoinEvent))
-	case hockevent.EVENT_PLAYER_LEFT:
+	case hockevent.EventPlayerLeft:
 		lab.handlePlayerLeft(*event.(*hockevent.PlayerLeftEvent))
-	case hockevent.EVENT_PLAYER_DEATH:
+	case hockevent.EventPlayerDeath:
 		lab.handlePlayerDeath(*event.(*hockevent.PlayerDeathEvent))
-	case hockevent.EVENT_PLAYER_UPDATE:
+	case hockevent.EventPlayerUpdate:
 		lab.handlePlayerUpdate(*event.(*hockevent.PlayerUpdateEvent))
-	case hockevent.EVENT_PLAYER_LIST:
+	case hockevent.EventPlayerList:
 		lab.handlePlayerList(*event.(*hockevent.PlayerListEvent))
+	case hockevent.EventPlayerDimensionChange:
+		lab.handlePlayerDimensionChanged(*event.(*hockevent.PlayerDimensionChangeEvent))
+	case hockevent.EventLog:
+		lab.handleLog(*event.(*hockevent.LogEvent))
 	}
 }

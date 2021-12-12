@@ -1,9 +1,11 @@
 package bot
 
 import (
+	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/racerxdl/minelab-bot/hockevent"
 	"github.com/racerxdl/minelab-bot/models"
+	"github.com/sandertv/gophertunnel/minecraft/text"
 )
 
 func (lab *Minelab) handlePlayerJoin(event hockevent.PlayerJoinEvent) {
@@ -34,6 +36,20 @@ func (lab *Minelab) handlePlayerList(event hockevent.PlayerListEvent) {
 		lab.AddPlayer(player, "")
 		lab.playerSetPlaying(player)
 	}
+}
+
+func (lab *Minelab) handlePlayerDimensionChanged(event hockevent.PlayerDimensionChangeEvent) {
+	changed := lab.UpdatePlayerDimension(event.Username, event.Dimension)
+	lab.log.Debugf("Received DimensionChangeEvent(%s,%d) -> %t", event.Username, event.Dimension, changed)
+	if changed {
+		lab.log.Infof("Player %s went to %s", event.Username, event.DimensionName())
+		lab.BroadcastMessage(ServerName, text.Colourf("<b>%s<b> foi para <b>%s</b>", event.Username, event.DimensionName()))
+		lab.sendDiscordChat(ServerName, fmt.Sprintf("%s foi para %s", event.Username, event.DimensionName()))
+	}
+}
+
+func (lab *Minelab) getPlayerDimension(playerName string) int {
+	return lab.players[playerName].Dimension
 }
 
 func (lab *Minelab) AddPlayer(username, xuid string) {
@@ -87,6 +103,28 @@ func (lab *Minelab) GetPlayerPosition(username string) *mgl32.Vec3 {
 	p := player.Position
 
 	return &p
+}
+
+func (lab *Minelab) UpdatePlayerDimension(username string, dimension int) bool {
+	lab.playerLock.Lock()
+	defer lab.playerLock.Unlock()
+
+	if username[0] == '@' {
+		username = username[1:]
+	}
+
+	player, ok := lab.players[username]
+	if !ok {
+		lab.players[username] = &models.Player{
+			Username:  username,
+			Dimension: dimension,
+		}
+		go lab.playerSetPlaying(username) // Spawn in routine because this also locks the mutex
+		return true
+	}
+	changed := player.Dimension != dimension
+	player.Dimension = dimension
+	return changed
 }
 
 func (lab *Minelab) UpdatePlayerPosAbsolute(username string, pos mgl32.Vec3) {

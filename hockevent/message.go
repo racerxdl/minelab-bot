@@ -19,5 +19,5 @@ type MessageEvent struct {
 }
 
 func (MessageEvent) GetType() Type {
-	return EVENT_MESSAGE
+	return EventMessage
 }

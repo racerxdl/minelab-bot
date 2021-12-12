@@ -5,5 +5,5 @@ type PlayerJoinEvent struct {
 }
 
 func (PlayerJoinEvent) GetType() Type {
-	return EVENT_PLAYER_JOIN
+	return EventPlayerJoin
 }

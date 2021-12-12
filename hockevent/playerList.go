@@ -5,5 +5,5 @@ type PlayerListEvent struct {
 }
 
 func (PlayerListEvent) GetType() Type {
-	return EVENT_PLAYER_LIST
+	return EventPlayerList
 }

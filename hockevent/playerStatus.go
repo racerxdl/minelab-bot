@@ -6,5 +6,5 @@ type PlayerStatusEvent struct {
 }
 
 func (PlayerStatusEvent) GetType() Type {
-	return EVENT_INVALID
+	return EventInvalid
 }

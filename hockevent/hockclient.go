@@ -54,11 +54,16 @@ func Connect(target string) (HockClient, error) {
 		for err != zmq.ErrorSocketClosed {
 			msg, err = c.socket.Recv(0)
 			if err != nil {
+				if err != zmq.ErrorMoreExpected {
+					log.Errorf("error receiving message: %s", err)
+				}
 				continue
 			}
 			event, err = Deserialize([]byte(msg))
 			if err == nil {
 				c.recv <- event
+			} else {
+				log.Errorf("error parsing msg %q: %s", msg, err)
 			}
 		}
 	}()

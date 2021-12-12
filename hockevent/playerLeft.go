@@ -5,5 +5,5 @@ type PlayerLeftEvent struct {
 }
 
 func (PlayerLeftEvent) GetType() Type {
-	return EVENT_PLAYER_LEFT
+	return EventPlayerLeft
 }
