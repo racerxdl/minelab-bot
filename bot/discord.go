@@ -5,6 +5,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/racerxdl/minelab-bot/discord"
 	"github.com/sandertv/gophertunnel/minecraft/text"
+	"html"
 	"time"
 )
 
@@ -26,6 +27,7 @@ func (lab *Minelab) handleOnDiscordMessage(s *discordgo.Session, m *discordgo.Me
 	}
 
 	if m.ChannelID == lab.discord.chatChannelId {
+		name = html.EscapeString(name)
 		lab.BroadcastMessage("Discord", "<"+text.Colourf("<yellow>%s</yellow>", name)+"> "+text.Colourf("<yellow>%s</yellow>", m.Content))
 		return
 	}

@@ -49,7 +49,11 @@ func (lab *Minelab) handlePlayerDimensionChanged(event hockevent.PlayerDimension
 }
 
 func (lab *Minelab) getPlayerDimension(playerName string) int {
-	return lab.players[playerName].Dimension
+	player, ok := lab.players[playerName]
+	if ok {
+		return player.Dimension
+	}
+	return 0
 }
 
 func (lab *Minelab) AddPlayer(username, xuid string) {
