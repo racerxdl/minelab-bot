@@ -2,13 +2,14 @@ package bot
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
+
 	"github.com/racerxdl/minelab-bot/hockevent"
 	"github.com/racerxdl/minelab-bot/lang"
 	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/text"
-	"regexp"
-	"strings"
 )
 
 var textRegex = regexp.MustCompile(`%(.*?)[\s]`)
@@ -113,6 +114,20 @@ func (lab *Minelab) handleCommand(playerName, message string) {
 			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("Você morreu em X: %.0f Y: %.0f Z: %.0f", coord.X(), coord.Y(), coord.Z()))
 			lab.sendDiscordChat(ServerName, fmt.Sprintf("%s died at X: %.0f Y: %.0f Z: %.0f", playerName, coord.X(), coord.Y(), coord.Z()))
 		}
+	case "bookmarks", "marcadores":
+		names, dimensions, positions, err := lab.db.GetPlayerPositionMarks(playerName)
+		if err != nil {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<bold>Houve um erro listando marcadores!</bold>"))
+			lab.sendDiscordChat(ServerName, fmt.Sprintf("%s tried to list markers but got error %q", playerName, err))
+			return
+		}
+
+		lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("Você tem <red><bold>%d</bold><red> marcadores:", len(names)))
+		for i, name := range names {
+			dimen := hockevent.DimensionName(dimensions[i])
+			pos := positions[i]
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("- <bold>%q</bold> em <bold>%s</bold> -> X: <red>%.0f</red> Y: <red>%.0f</red> Z: <red>%.0f</red>", name, dimen, pos.X(), pos.Y(), pos.Z()))
+		}
 	case "whereis", "ondeta":
 		if len(cmd) < 2 {
 			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Uso: !ondeta playerName/marcador</red>"))
@@ -134,6 +149,11 @@ func (lab *Minelab) handleCommand(playerName, message string) {
 		}
 		lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("Marcador <bold>%s</bold> está em X: %.0f Y: %.0f Z: %.0f", cmd[1], mark.X(), mark.Y(), mark.Z()))
 		lab.sendDiscordChat(ServerName, fmt.Sprintf("Mark %q is at X: %.0f Y: %.0f Z: %.0f", cmd[1], mark.X(), mark.Y(), mark.Z()))
+		return
+	case "deaths", "mortes":
+		for p, d := range lab.playerDeaths {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("- <bold>%s</bold>: <red>%d</red>", p, d))
+		}
 		return
 	case "reload":
 		//lab.reloadConfig()

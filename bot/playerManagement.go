@@ -173,6 +173,8 @@ func (lab *Minelab) UpdatePlayerDeath(username string) {
 	if !ok {
 		return
 	}
+	dimen := hockevent.DimensionName(player.Dimension)
+	lab.db.AddPositionMark(username, fmt.Sprintf("lastdeath_%s", dimen), player.Dimension, player.Position)
 
 	player.LastDeathPosition = &mgl32.Vec3{}
 	copy(player.LastDeathPosition[:], player.Position[:])

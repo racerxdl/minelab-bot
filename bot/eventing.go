@@ -8,7 +8,7 @@ func (lab *Minelab) SendMessageToPlayer(source, username, message string) {
 		To:           username,
 		Message:      message,
 		Translatable: true,
-		MsgType:      hockevent.MESSAGE_WHISPER,
+		MsgType:      hockevent.MESSAGE_SYSTEM,
 	}
 }
 

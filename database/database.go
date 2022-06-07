@@ -1,13 +1,15 @@
 package database
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
-	"strings"
-	"time"
 )
 
 var log = logrus.New()
@@ -17,6 +19,7 @@ const markBucket = "marks"
 type DB interface {
 	AddPositionMark(username, mark string, dimension int, position mgl32.Vec3) error
 	GetPositionMark(username, mark string, dimension int) (vec mgl32.Vec3, err error)
+	GetPlayerPositionMarks(username string) (name []string, dimension []int, vec []mgl32.Vec3, err error)
 	Close() error
 }
 
@@ -109,6 +112,28 @@ func (d *database) AddPositionMark(username, mark string, dimension int, positio
 		log.Infof("Saving marker %q", ks)
 		return b.Put([]byte(ks), data)
 	})
+}
+
+func (d *database) GetPlayerPositionMarks(username string) (name []string, dimension []int, vec []mgl32.Vec3, err error) {
+	k := []byte(username + "-")
+	log.Infof("Reading markers for %q", k)
+	err = d.db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(markBucket))
+		return b.ForEach(func(bk, bv []byte) error {
+			if bytes.Contains(bk, k) {
+				m := positionMarker{}
+				err = json.Unmarshal(bv, &m)
+				if err != nil {
+					return fmt.Errorf("error deserializing json: %s", err)
+				}
+				name = append(name, m.Mark)
+				dimension = append(dimension, m.Dimension)
+				vec = append(vec, m.Position)
+			}
+			return nil
+		})
+	})
+	return name, dimension, vec, err
 }
 
 func (d *database) GetPositionMark(username, mark string, dimension int) (vec mgl32.Vec3, err error) {
