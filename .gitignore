@@ -15,4 +15,4 @@
 # vendor/
 cmd/config.toml
 .idea
-minelab.db
+*.db

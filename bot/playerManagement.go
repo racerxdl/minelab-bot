@@ -2,6 +2,7 @@ package bot
 
 import (
 	"fmt"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/racerxdl/minelab-bot/hockevent"
 	"github.com/racerxdl/minelab-bot/models"
@@ -35,6 +36,14 @@ func (lab *Minelab) handlePlayerList(event hockevent.PlayerListEvent) {
 		lab.log.Infof("PlayerList(%s)", player)
 		lab.AddPlayer(player, "")
 		lab.playerSetPlaying(player)
+	}
+}
+
+func (lab *Minelab) handlePlayerDeathCount(event hockevent.PlayerDeathCountResponseEvent) {
+	lab.log.Infof("Received player death count with %d players", len(event.PlayerDeaths))
+	for player, deaths := range event.PlayerDeaths {
+		lab.log.Infof("Player %s - Deaths %d", player, deaths)
+		lab.playerDeaths[player] = deaths
 	}
 }
 

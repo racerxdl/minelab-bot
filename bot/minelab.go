@@ -1,6 +1,9 @@
 package bot
 
 import (
+	"sync"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/racerxdl/minelab-bot/config"
 	"github.com/racerxdl/minelab-bot/database"
@@ -9,22 +12,21 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/text"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/openpgp/packet"
-	"sync"
-	"time"
 )
 
 const ServerName = "MineLab"
 
 type Minelab struct {
-	log            *logrus.Logger
-	players        map[string]*models.Player
-	cfg            config.Config
-	chatBroadcast  chan packet.Packet
-	lastupdatetick uint64
-	db             database.DB
+	log           *logrus.Logger
+	players       map[string]*models.Player
+	playerDeaths  map[string]int
+	cfg           config.Config
+	chatBroadcast chan packet.Packet
+	// lastupdatetick uint64
+	db database.DB
 
-	playerLock         sync.RWMutex
-	broadcastLock      sync.Mutex
+	playerLock sync.RWMutex
+	// broadcastLock      sync.Mutex
 	broadcastReceivers map[chan<- packet.Packet]struct{}
 	globalstop         chan struct{}
 
@@ -53,6 +55,7 @@ func MakeMinelab(cfg config.Config) (*Minelab, error) {
 		cfg:                cfg,
 		broadcastReceivers: make(map[chan<- packet.Packet]struct{}),
 		chatBroadcast:      make(chan packet.Packet, 1),
+		playerDeaths:       make(map[string]int),
 		db:                 db,
 	}, nil
 }
@@ -84,6 +87,7 @@ func (lab *Minelab) Start() error {
 	go func() {
 		time.Sleep(time.Second * 10)
 		lab.RequestPlayerList()
+		lab.RequestPlayerDeathCount()
 	}()
 
 	<-lab.globalstop
@@ -111,10 +115,12 @@ func (lab *Minelab) rxLoop(stop chan struct{}) {
 	lab.log.Info("RX Loop Started")
 	defer lab.log.Info("RX Loop Ended")
 	rcv := lab.behock.Recv()
-	for {
+
+	loop := true
+	for loop {
 		select {
 		case <-stop:
-			break
+			loop = false
 		case event := <-rcv:
 			lab.HandlePacket(event)
 		}
@@ -124,10 +130,11 @@ func (lab *Minelab) routine(stop chan struct{}) {
 	t := time.NewTicker(time.Hour)
 	defer t.Stop()
 
-	for {
+	loop := true
+	for loop {
 		select {
 		case <-stop:
-			break
+			loop = false
 		case <-t.C:
 			lab.BroadcastMessage(ServerName, text.Colourf("<B>The time now is</B>: <red>%s</red>", time.Now().Format(time.RFC822Z)))
 		}
@@ -154,6 +161,8 @@ func (lab *Minelab) HandlePacket(event hockevent.HockEvent) {
 		lab.handlePlayerList(*event.(*hockevent.PlayerListEvent))
 	case hockevent.EventPlayerDimensionChange:
 		lab.handlePlayerDimensionChanged(*event.(*hockevent.PlayerDimensionChangeEvent))
+	case hockevent.EventPlayerDeathCountResponse:
+		lab.handlePlayerDeathCount(*event.(*hockevent.PlayerDeathCountResponseEvent))
 	case hockevent.EventLog:
 		lab.handleLog(*event.(*hockevent.LogEvent))
 	}

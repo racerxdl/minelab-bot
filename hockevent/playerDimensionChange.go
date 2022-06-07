@@ -5,7 +5,8 @@ import "fmt"
 type PlayerDimensionChangeEvent struct {
 	PlayerStatusEvent
 
-	Dimension int `json:"dimension"`
+	Dimension     int `json:"dimension"`
+	FromDimension int `json:"fromDimension"`
 }
 
 func (PlayerDimensionChangeEvent) GetType() Type {
@@ -14,6 +15,10 @@ func (PlayerDimensionChangeEvent) GetType() Type {
 
 func (e PlayerDimensionChangeEvent) DimensionName() string {
 	return DimensionName(e.Dimension)
+}
+
+func (e PlayerDimensionChangeEvent) FromDimensionName() string {
+	return DimensionName(e.FromDimension)
 }
 
 func DimensionName(dimension int) string {
