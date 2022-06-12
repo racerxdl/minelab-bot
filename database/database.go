@@ -18,6 +18,7 @@ const markBucket = "marks"
 
 type DB interface {
 	AddPositionMark(username, mark string, dimension int, position mgl32.Vec3) error
+	DelPositionMark(username, mark string, dimension int) error
 	GetPositionMark(username, mark string, dimension int) (vec mgl32.Vec3, err error)
 	GetPlayerPositionMarks(username string) (name []string, dimension []int, vec []mgl32.Vec3, err error)
 	Close() error
@@ -88,6 +89,14 @@ func (d *database) migrate() error {
 
 func (d *database) Close() error {
 	return d.db.Close()
+}
+
+func (d *database) DelPositionMark(username, mark string, dimension int) error {
+	ks := fmt.Sprintf("%s-%d-%s", username, dimension, mark)
+	return d.db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(markBucket))
+		return b.Delete([]byte(ks))
+	})
 }
 
 func (d *database) AddPositionMark(username, mark string, dimension int, position mgl32.Vec3) error {

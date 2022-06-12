@@ -3,6 +3,7 @@ package bot
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/racerxdl/minelab-bot/hockevent"
@@ -80,6 +81,19 @@ func (lab *Minelab) handleChat(event hockevent.MessageEvent) bool {
 	return false
 }
 
+var commandList = [][]string{
+	{"comandos", "lista de comandos"},
+	{"mark", "criar marcador"},
+	{"delmark", "apagar marcador"},
+	{"ondemorri", "local da ultima morte"},
+	{"marcadores", "marcadores do usuario"},
+	{"ondeta", "localizar marcador"},
+	{"mortes", "lista de mortes"},
+	{"portal", "coordenada do portal na outra dimensao do local atual"},
+	{"n2o", "conversor de coordenada nether 2 overworld"},
+	{"o2n", "conversor de coordenada overworld 2 nether"},
+}
+
 func (lab *Minelab) handleCommand(playerName, message string) {
 	message = message[1:]
 	cmd := strings.SplitN(message, " ", 2)
@@ -92,7 +106,33 @@ func (lab *Minelab) handleCommand(playerName, message string) {
 
 	switch cmd[0] {
 	case "commands", "comandos":
-		lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<bold>ondemorri</bold>, <bold>ondeta</bold>, <bold>mark</bold>"))
+		for _, c := range commandList {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<bold>!%s</bold>: %s", c[0], c[1]))
+		}
+		return
+		// lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<bold>ondemorri</bold>, <bold>ondeta</bold>, <bold>mark</bold>"))
+	case "delmark":
+		if len(cmd) < 2 {
+			lab.SendMessageToPlayer(ServerName, playerName, "<bold>delmark</bold> dimensao nome_da_marcacao")
+			return
+		}
+		s := strings.SplitN(cmd[1], " ", 2)
+		if len(s) != 2 {
+			lab.SendMessageToPlayer(ServerName, playerName, "<bold>delmark</bold> dimensao nome_da_marcacao")
+			return
+		}
+		dimen := hockevent.ToDimensionId(s[0])
+		if dimen == -1 {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Dimensao invalida: %q</red>", s[0]))
+			return
+		}
+		err := lab.db.DelPositionMark(playerName, s[1], dimen)
+		if err != nil {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Erro apagando %q: %s</red>", s[1], err))
+			return
+		}
+		lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("Marcador %q apagado!", s[1]))
+		return
 	case "mark":
 		if len(cmd) < 2 {
 			lab.SendMessageToPlayer(ServerName, playerName, "<bold>mark</bold> nome_da_marcacao")
@@ -155,8 +195,85 @@ func (lab *Minelab) handleCommand(playerName, message string) {
 			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("- <bold>%s</bold>: <red>%d</red>", p, d))
 		}
 		return
+	case "portal":
+		pos := lab.GetPlayerPosition(playerName)
+		dimen := lab.getPlayerDimension(playerName)
+		tdimen := 0
+		if dimen != 0 && dimen != 1 {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>!portal só funciona no nether e overworld.</red>"))
+			return
+		}
+		x := 0
+		z := 0
+
+		if dimen == 0 {
+			x = int(pos[0] / 8)
+			z = int(pos[2] / 8)
+			tdimen = 1
+		} else {
+			x = int(pos[0] * 8)
+			z = int(pos[2] * 8)
+		}
+		sname := hockevent.DimensionName(dimen)
+		dname := hockevent.DimensionName(tdimen)
+		lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<bold>%s<bold> X: %d Z: %d => <bold>%s</bold> X: %d Z: %d", sname, int(pos.X()), int(pos.Z()), dname, x, z))
+		return
+	case "n2o":
+		if len(cmd) < 2 {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Uso: !n2o X Z</red>"))
+			return
+		}
+		s := strings.Split(cmd[1], " ")
+		if len(s) != 2 {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Uso: !n2o X Z</red>"))
+			return
+		}
+		X, errx := strconv.ParseInt(s[0], 10, 32)
+		Y, erry := strconv.ParseInt(s[1], 10, 32)
+		errMsg := ""
+		if errx != nil {
+			errMsg += fmt.Sprintf("X invalido: %s. ", errx)
+		}
+		if erry != nil {
+			errMsg += fmt.Sprintf("Y invalido: %s. ", erry)
+		}
+		if errMsg != "" {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Erro: %s</red>", errMsg))
+			return
+		}
+		nx := X * 8
+		ny := Y * 8
+		lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<bold>N</bold> X: %d Z: %d => <bold>O</bold> X: %d Y %d", X, Y, nx, ny))
+		return
+	case "o2n":
+		if len(cmd) < 2 {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Uso: !o2n X Z</red>"))
+			return
+		}
+		s := strings.Split(cmd[1], " ")
+		if len(s) != 2 {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Uso: !o2n X Z</red>"))
+			return
+		}
+		X, errx := strconv.ParseInt(s[0], 10, 32)
+		Y, erry := strconv.ParseInt(s[1], 10, 32)
+		errMsg := ""
+		if errx != nil {
+			errMsg += fmt.Sprintf("X invalido: %s. ", errx)
+		}
+		if erry != nil {
+			errMsg += fmt.Sprintf("Y invalido: %s. ", erry)
+		}
+		if errMsg != "" {
+			lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<red>Erro: %s</red>", errMsg))
+			return
+		}
+		nx := X / 8
+		ny := Y / 8
+		lab.SendMessageToPlayer(ServerName, playerName, text.Colourf("<bold>O</bold> X: %d Z: %d => <bold>N</bold> X: %d Y %d", X, Y, nx, ny))
+		return
 	case "reload":
-		//lab.reloadConfig()
+		// lab.reloadConfig()
 		//lab.reloadSound()
 		lab.BroadcastMessage(ServerName, "Configuracões recarregadas")
 	default:

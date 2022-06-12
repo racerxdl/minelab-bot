@@ -1,6 +1,8 @@
 package hockevent
 
 import (
+	"time"
+
 	zmq "github.com/pebbe/zmq4"
 	"github.com/sirupsen/logrus"
 )
@@ -41,6 +43,9 @@ func Connect(target string) (HockClient, error) {
 					pdata := Serialize(p)
 					_, err = c.socket.Send(pdata, 0)
 				}
+			} else {
+				time.Sleep(time.Second)
+				log.Error("No send channel")
 			}
 		}
 	}()

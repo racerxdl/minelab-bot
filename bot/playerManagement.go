@@ -40,9 +40,9 @@ func (lab *Minelab) handlePlayerList(event hockevent.PlayerListEvent) {
 }
 
 func (lab *Minelab) handlePlayerDeathCount(event hockevent.PlayerDeathCountResponseEvent) {
-	lab.log.Infof("Received player death count with %d players", len(event.PlayerDeaths))
+	// lab.log.Infof("Received player death count with %d players", len(event.PlayerDeaths))
 	for player, deaths := range event.PlayerDeaths {
-		lab.log.Infof("Player %s - Deaths %d", player, deaths)
+		// lab.log.Infof("Player %s - Deaths %d", player, deaths)
 		lab.playerDeaths[player] = deaths
 	}
 }

@@ -22,11 +22,9 @@ type Minelab struct {
 	playerDeaths  map[string]int
 	cfg           config.Config
 	chatBroadcast chan packet.Packet
-	// lastupdatetick uint64
-	db database.DB
+	db            database.DB
 
-	playerLock sync.RWMutex
-	// broadcastLock      sync.Mutex
+	playerLock         sync.RWMutex
 	broadcastReceivers map[chan<- packet.Packet]struct{}
 	globalstop         chan struct{}
 
@@ -77,7 +75,7 @@ func (lab *Minelab) Start() error {
 		return err
 	}
 	lab.behock = c
-	lab.sender = make(chan hockevent.HockEvent, 100)
+	lab.sender = make(chan hockevent.HockEvent, 1)
 	c.Send(lab.sender)
 
 	go lab.routine(stop)
@@ -129,10 +127,14 @@ func (lab *Minelab) rxLoop(stop chan struct{}) {
 func (lab *Minelab) routine(stop chan struct{}) {
 	t := time.NewTicker(time.Hour)
 	defer t.Stop()
+	rechecks := time.NewTicker(time.Second * 30)
+	defer rechecks.Stop()
 
 	loop := true
 	for loop {
 		select {
+		case <-rechecks.C:
+			lab.RequestPlayerDeathCount()
 		case <-stop:
 			loop = false
 		case <-t.C:

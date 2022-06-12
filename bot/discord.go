@@ -2,11 +2,12 @@ package bot
 
 import (
 	"fmt"
+	"html"
+	"time"
+
 	"github.com/bwmarrin/discordgo"
 	"github.com/racerxdl/minelab-bot/discord"
 	"github.com/sandertv/gophertunnel/minecraft/text"
-	"html"
-	"time"
 )
 
 func (lab *Minelab) handleOnDiscordMessage(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -35,7 +36,13 @@ func (lab *Minelab) handleOnDiscordMessage(s *discordgo.Session, m *discordgo.Me
 	c, _ := s.Channel(m.ChannelID)
 	cc, _ := s.Channel(c.ParentID)
 
-	cname := cc.Name + "/" + c.Name
+	cname := ""
+
+	if cc != nil {
+		cname += cc.Name + "/"
+	}
+
+	cname += c.Name
 
 	lab.log.Debugf("[DISCORD-%s] (%s) %s > %s\n", m.GuildID, cname, name, m.Content)
 	//fmt.Printf("(%s) %s > %s\n", c.Name, m.Author.Username, m.Content)
